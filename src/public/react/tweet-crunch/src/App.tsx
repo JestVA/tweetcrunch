@@ -1,26 +1,38 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import logo from './logo.svg';
 import './App.css';
+import { getAPI } from "./utils/requestAPI";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+const App = () => {
+
+	const [userTimeline, setUserTimeline] = useState({
+		message: ""
+	});
+
+	const testAPi = async (endpoint: string) => {
+		try {
+			const apiRes = await getAPI(endpoint);
+
+			setUserTimeline(apiRes);
+		}
+		catch (err) {
+			alert(err);
+		}
+
+	}
+
+	useEffect(() => {
+
+		testAPi(`/api/user-timeline/100200`);
+
+	}, []);
+
+
+	return (
+		<div className="App">
+			API Returned: {userTimeline.message}
+		</div>
+	);
 }
 
 export default App;
