@@ -206,7 +206,7 @@ const App = () => {
 					<Box display="flex" flexDir="row-reverse" justifyContent="center" flexWrap="wrap-reverse">
 						{
 							displayTimelines.map((t: UserObjTimeline, i: number) => {
-								return <Box key={i} width="320px" height="auto">
+								return <Box key={i} p={2} m={2} width="320px" height="auto">
 									{
 
 										_.values(t).map(timeline => {

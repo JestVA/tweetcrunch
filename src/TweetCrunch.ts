@@ -9,7 +9,7 @@ class TweetCrunch extends Server {
 
 	private readonly SERVER_START_MSG = "TweetCrunch Server listening on port: ";
 
-	private readonly DEV_MSG = "TweetCrunch Server is running in development mode. No frontend content yet."
+	private readonly DEV_MSG = "TweetCrunch Server is running in development mode. You need to run prod build to see the CRA."
 
 	constructor() {
 
@@ -21,14 +21,17 @@ class TweetCrunch extends Server {
 
 		this.setupControllers();
 
-		// make fe not break
+
 		if (process.env.NODE_ENV !== "production") {
 
 			Logger.Info("Starting server in development mode");
 
-			const msg = this.DEV_MSG + process.env.EXPRESS_PORT;
+			const msg = this.DEV_MSG;
 
 			this.app.get("*", (req, res) => res.send(msg));
+		}
+		else {
+			this.serveProdView();
 		}
 	}
 
@@ -47,6 +50,15 @@ class TweetCrunch extends Server {
 		}
 
 		super.addControllers(ctrlInstances);
+	}
+
+	private serveProdView(): void {
+		const dir = path.join(__dirname, "public/react/tweet-crunch");
+		this.app.set("views", dir);
+		this.app.use(express.static(dir));
+		this.app.get("*", (req, res) => {
+			res.sendFile("index.html", { root: dir });
+		});
 	}
 
 	public start(port: number): void {
