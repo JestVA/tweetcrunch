@@ -20,7 +20,8 @@
 		]
 	},
 	"include": [
-		"./src/**/*.ts"
+		"./src/**/*.ts",
+		"src/public/react/tweet-crunch/src/utils/requestAPI.tsx"
 	],
 	"exclude": [
 		"./src/**/*.test.ts",
