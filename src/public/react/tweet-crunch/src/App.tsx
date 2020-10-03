@@ -1,17 +1,17 @@
-import React, { useEffect, useState, SyntheticEvent } from 'react';
+import React, { useEffect, useState } from 'react';
 import { generateBearerToken } from "./utils/common";
 import useLocalStorage from "./utils/customHooks/useLocalStorage";
 import { getAPI } from './utils/requestAPI';
 import { ThemeProvider, CSSReset } from "@chakra-ui/core";
 import theme from "./utils/themes";
-import { Input, InputGroup, InputLeftAddon, Box, Text, Spinner } from "@chakra-ui/core";
+import { Input, InputGroup, InputLeftAddon, Box, Text, Spinner, Avatar, Button } from "@chakra-ui/core";
 import { AiOutlinePlusCircle } from "react-icons/ai";
+import ClickOut from "./utils/ClickOut";
 import {
-	Container,
 	HeroContainer,
 	HeroHeading,
 	HeroSubHeading,
-	Avatar
+	TweetCard
 } from "./components";
 import _ from "underscore";
 
@@ -22,15 +22,12 @@ export interface User {
 }
 
 export interface UserObjTimeline {
-
+	// Typescript seems happy, I am happy
 }
 
 export interface Tweet {
 	text: string;
 }
-//export interface Timeline {
-//	text: string;
-//}
 
 
 const App = () => {
@@ -53,10 +50,20 @@ const App = () => {
 		}
 	}
 
-	const fetchUserTimeline = async (userId: string, bearerToken: string) => {
-
+	const fetchUserTimeline = async (userId: string, bearerToken: string, maxId?: number) => {
 		try {
-			const { timeline } = await getAPI(`/api/user-timeline/${userId}?bearer=${bearerToken}`);
+
+			let qs = `/api/user-timeline/${userId}?bearer=${bearerToken}`;
+
+			if (maxId)
+				qs += `&since_id=${maxId}`;
+
+			console.log(qs);
+			const { timeline } = await getAPI(qs);
+
+			// TODO: deal with REFRESH issue
+			// do not lose state of cached timeline
+
 
 			setUserTimeline({
 				...userTimeline,
@@ -64,23 +71,17 @@ const App = () => {
 			});
 
 			setDisplayTimelines([...displayTimelines, { [userId]: timeline }]);
-
 			setLoadingQuery(false);
-
 		}
 		catch (err) {
 			alert(err);
 			setLoadingQuery(false);
 		}
-
 	}
 
 	const userSearch = (search: string) => `/api/user-timeline/search.json?q=${search}`;
 
 	const handleAsyncSearch = async (query: string) => {
-
-
-
 		try {
 			const { users } = await getAPI(userSearch(query));
 
@@ -94,16 +95,11 @@ const App = () => {
 		}
 	}
 
-
-
-
 	useEffect(() => {
 		// on first mount check if client has a bearer token in localStorage
 		// and if not fetch a fresh one
 		if (!bearer)
 			fetchNewToken();
-
-		//fetchUserTimeline("COERCITON", bearer);
 
 		// if user is searching in async input, send query to Server/Twitter API
 		if (query)
@@ -118,34 +114,50 @@ const App = () => {
 
 	const addUserTimeline = (userId: string) => {
 
-		// loading state
 		setLoadingQuery(true);
-
-		// clear users menu dropdown
 		setUserSearchResults([]);
-
-		// clear input
 		setQuery("");
 
+		// only touch API endpoint if we don't have user in localStorage
 		if (userTimeline[userId]) {
 			setDisplayTimelines([...displayTimelines, { [userId]: userTimeline[userId] }])
 			setLoadingQuery(false);
 			return;
 		}
 
-		// only touch API endpoint if we don't have user in localStorage
 		fetchUserTimeline(userId, bearer);
 	}
 
-	//console.log(userTimeline);
-	console.log(displayTimelines);
+	const closeMenu = () => {
+		setUserSearchResults([]);
+	}
 
+	const refreshTweets = (timelineToRefresh: any) => {
+		console.log(timelineToRefresh, "TO BE REFRESHED");
+		const [userId, tweetsArray] = [_.keys(timelineToRefresh), _.values(timelineToRefresh)];
+		// since_id
+		// loop through tweets to get max id
+		let maxId = 0;
+
+		_.first(tweetsArray).forEach((t: any) => t.id > maxId ? maxId = t.id : null);
+
+		console.log(userId);
+
+		// set up to date notification! 
+		if (!maxId)
+			return;
+
+		// make a new request with since_id
+		fetchUserTimeline(userId[0], bearer, maxId);
+
+
+	}
+
+	// the following is a sleepless night and hackathon. Beware those who enter, for there is no return!
 	return (
 		<>
 			<ThemeProvider theme={theme}>
 				<CSSReset />
-
-
 				<Box
 					height={["auto", "100vh"]}
 					display={["block", "flex"]}
@@ -177,58 +189,49 @@ const App = () => {
 									/>
 								</InputGroup>
 								<Box position="relative" display="flex" flex={1}>
-									<Box position="absolute" width={"100%"} maxH="400px" overflowY="scroll">
-										{userSearchResults.map((user: User, i: string) =>
-											<Box bg="gray.100" key={i}>
-												<Box display="inline-flex" alignItems="center">
-													<Box px="5">
-														<AiOutlinePlusCircle onClick={() => addUserTimeline(user.id_str)} cursor="pointer" />
+									<ClickOut toggle={closeMenu}>
+										<Box position="absolute" zIndex={100000} width={"100%"} maxH="400px" overflowY="scroll">
+											{userSearchResults.map((user: User, i: string) =>
+												<Box bg="gray.100" key={i}>
+													<Box display="inline-flex" alignItems="center">
+														<Box px="5">
+															<AiOutlinePlusCircle onClick={() => addUserTimeline(user.id_str)} cursor="pointer" />
+														</Box>
+														<Avatar size="sm" src={user.profile_image_url} />
+														<Text px="2" fontWeight={600}>{user.screen_name}</Text>
 													</Box>
-
-													<Avatar imgSrc={user.profile_image_url} />
-
-													<Text px="2" fontWeight={600}>{user.screen_name}</Text>
-												</Box>
-											</Box>)}
-
-									</Box>
+												</Box>)}
+										</Box>
+									</ClickOut>
 								</Box>
 							</Box>
 							{loadingQuery ?
 								<Box p={5} display="flex" flexDirection="column" alignItems="center">
 									<Spinner />
 									<Text display="block" p={3} fontWeight={600}>Loading...</Text>
-
 								</Box> : null}
 						</HeroContainer>
 					</Box>
-
 					<Box display="flex" flexDir="row-reverse" justifyContent="center" flexWrap="wrap-reverse">
 						{
 							displayTimelines.map((t: UserObjTimeline, i: number) => {
-								return <Box key={i} p={2} m={2} width="320px" height="auto">
+								return <Box key={i} p={2} m={4} width="320px" height="auto">
+									<Button onClick={() => refreshTweets(t)} borderColor="gray.200" size="xs" rightIcon="repeat" variantColor="ghost" variant="outline">
+										Refresh
+									</Button>
 									{
-
 										_.values(t).map(timeline => {
-											console.log(timeline);
 											return timeline.map((tweet: Tweet) => {
-												return tweet.text
+												// the developer in me was crying so decided to make a component
+												return <TweetCard tweetMetadata={tweet} />
 											})
 										})
-
 									}
-									"ABC"
 								</Box>
 							})
 						}
 					</Box>
-
 				</Box>
-
-
-
-
-
 			</ThemeProvider>
 		</>
 	);

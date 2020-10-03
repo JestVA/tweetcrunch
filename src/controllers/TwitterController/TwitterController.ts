@@ -17,12 +17,12 @@ class TwitterController {
 	public static readonly BEARER_TOKEN = "Bearer token generated / refreshed successfuly";
 	public static readonly NO_BEARER_TOKEN = "No Bearer token was received from client";
 	public static readonly USERS = "List of 1000 users fetched!";
-
+	public static readonly USER_PICKS = ["id_str", "name", "screen_name", "location", "profile_image_url"];
+	public static readonly TWEET_PICKS = ["favorite_count", "retweet_count", "created_at", "id", "user", "media", "full_text"];
 	// brings back a list of users from Twitter that match the query
 	@Get('search.json')
 	private async searchUsers(req: Request, res: Response) {
 
-		const userPicks = ["id_str", "name", "screen_name", "location", "profile_image_url"];
 
 		try {
 			const { q } = req.query;
@@ -45,7 +45,7 @@ class TwitterController {
 
 					const ret: [Object] = JSON.parse(data);
 
-					const sanitizedUsers = ret.map((u) => _.pick(u, userPicks));
+					const sanitizedUsers = ret.map((u) => _.pick(u, TwitterController.USER_PICKS));
 
 					return res.status(OK).json({
 						message: TwitterController.USERS,
@@ -71,24 +71,33 @@ class TwitterController {
 
 			const { user_id } = req.params;
 
-			const { bearer } = req.query;
+			const { bearer, since_id } = req.query;
 
 			if (!bearer)
 				return res.status(BAD_REQUEST).json({
 					error: TwitterController.NO_BEARER_TOKEN
 				});
 
-			const getUserTimeline = await axios.get(`https://api.twitter.com/1.1/statuses/user_timeline.json?user_id=${user_id}`, {
+			let qs = `https://api.twitter.com/1.1/statuses/user_timeline.json?user_id=${user_id}&tweet_mode=extended`;
+
+			if (since_id)
+				qs += `&since_id=${Number(since_id) + 1}`;
+
+			console.log(qs);
+
+			const getUserTimeline = await axios.get(qs, {
 				headers: {
 					'authorization': `Bearer ${bearer}`
 				}
 			});
 
-			// TODO: Pick only relevant fields, format the objects better
+			const goodUser = _.map(getUserTimeline.data, (e: any, i: any) => _.pick(e, TwitterController.TWEET_PICKS));
+			// easier to travers and more legible
+			goodUser.forEach((tweet: any) => tweet.user = _.pick(tweet.user, TwitterController.USER_PICKS));
 
 			return res.status(OK).json({
 				message: TwitterController.SUCCESS_MSG + user_id,
-				timeline: getUserTimeline.data
+				timeline: goodUser
 			});
 
 		}
