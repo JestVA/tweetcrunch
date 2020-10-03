@@ -21,6 +21,10 @@ const HeroHeading = (props: any) => {
 			mb={[2, 4]}
 			maxW={["sm", "100%"]}
 			textAlign={["left", "center"]}
+			display="flex"
+			flexDirection="column"
+			alignItems="center"
+			flexWrap="wrap"
 		>
 			{props.children}
 		</Heading>

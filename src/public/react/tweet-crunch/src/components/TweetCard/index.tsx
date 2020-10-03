@@ -43,7 +43,7 @@ const TweetCard = (props: any) => {
 						textTransform="uppercase"
 						ml="2"
 					>
-						@{screenName} &bull; {name}
+						{name} &bull; @{screenName}
 					</Box>
 
 				</Box>

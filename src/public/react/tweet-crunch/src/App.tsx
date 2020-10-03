@@ -4,7 +4,7 @@ import useLocalStorage from "./utils/customHooks/useLocalStorage";
 import { getAPI } from './utils/requestAPI';
 import { ThemeProvider, CSSReset } from "@chakra-ui/core";
 import theme from "./utils/themes";
-import { Input, InputGroup, InputLeftAddon, Box, Text, Spinner, Avatar, Button } from "@chakra-ui/core";
+import { Input, InputGroup, InputLeftAddon, Box, Text, Spinner, Avatar, Button, Image } from "@chakra-ui/core";
 import { AiOutlinePlusCircle } from "react-icons/ai";
 import ClickOut from "./utils/ClickOut";
 import {
@@ -173,8 +173,15 @@ const App = () => {
 					>
 						<HeroContainer>
 							<HeroHeading>
-								Welcome to TwitterCrunch! 🥳
-								</HeroHeading>
+								{/*Welcome to TwitterCrunch! 🥳*/}
+								Welcome to
+								<Image
+									size="150px"
+									objectFit="cover"
+									src="/assets/twittercrunch.png"
+
+								/>
+							</HeroHeading>
 							<HeroSubHeading>
 								Simply search for a Twitter user handle name to see their latest tweets.
 								</HeroSubHeading>
