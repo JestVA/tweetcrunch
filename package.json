@@ -24,7 +24,7 @@
 	},
 	"scripts": {
 		"start": "npm install --only=prod && NODE_ENV=production node ./build/start.js",
-		"build": "sh ./util/buildForProd.sh",
+		"build": "sh ./util/makeProdBuild.sh",
 		"start-dev": "nodemon --config \"./util/nodemon.json\"/",
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
