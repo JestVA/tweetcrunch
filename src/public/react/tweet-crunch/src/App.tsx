@@ -13,12 +13,24 @@ import {
 	HeroSubHeading,
 	Avatar
 } from "./components";
+import _ from "underscore";
 
 export interface User {
 	screen_name: string;
 	profile_image_url: string;
 	id_str: string;
 }
+
+export interface UserObjTimeline {
+
+}
+
+export interface Tweet {
+	text: string;
+}
+//export interface Timeline {
+//	text: string;
+//}
 
 
 const App = () => {
@@ -28,6 +40,7 @@ const App = () => {
 	const [loadingQuery, setLoadingQuery] = useState(false);
 	const [userSearchResults, setUserSearchResults] = useState<any>([]);
 	const [query, setQuery] = useState("");
+	const [displayTimelines, setDisplayTimelines] = useState<any>([]);
 
 	const fetchNewToken = async () => {
 		try {
@@ -46,8 +59,11 @@ const App = () => {
 			const { timeline } = await getAPI(`/api/user-timeline/${userId}?bearer=${bearerToken}`);
 
 			setUserTimeline({
+				...userTimeline,
 				[userId]: timeline
 			});
+
+			setDisplayTimelines([...displayTimelines, { [userId]: timeline }]);
 
 			setLoadingQuery(false);
 
@@ -111,18 +127,25 @@ const App = () => {
 		// clear input
 		setQuery("");
 
-		fetchUserTimeline(userId, bearer);
+		if (userTimeline[userId]) {
+			setDisplayTimelines([...displayTimelines, { [userId]: userTimeline[userId] }])
+			setLoadingQuery(false);
+			return;
+		}
 
+		// only touch API endpoint if we don't have user in localStorage
+		fetchUserTimeline(userId, bearer);
 	}
 
-	console.log(userTimeline);
+	//console.log(userTimeline);
+	console.log(displayTimelines);
 
 	return (
 		<>
 			<ThemeProvider theme={theme}>
 				<CSSReset />
 
-				{/*<Container>*/}
+
 				<Box
 					height={["auto", "100vh"]}
 					display={["block", "flex"]}
@@ -178,20 +201,31 @@ const App = () => {
 
 								</Box> : null}
 						</HeroContainer>
+					</Box>
 
+					<Box display="flex" flexDir="row-reverse" justifyContent="center" flexWrap="wrap-reverse">
+						{
+							displayTimelines.map((t: UserObjTimeline, i: number) => {
+								return <Box key={i} width="320px" height="auto">
+									{
+
+										_.values(t).map(timeline => {
+											console.log(timeline);
+											return timeline.map((tweet: Tweet) => {
+												return tweet.text
+											})
+										})
+
+									}
+									"ABC"
+								</Box>
+							})
+						}
 					</Box>
 
 				</Box>
 
 
-
-
-
-
-
-
-
-				{/*</Container>*/}
 
 
 
