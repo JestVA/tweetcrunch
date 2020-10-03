@@ -4,11 +4,20 @@ import useLocalStorage from "./utils/customHooks/useLocalStorage";
 import { getAPI } from './utils/requestAPI';
 import { ThemeProvider, CSSReset } from "@chakra-ui/core";
 import theme from "./utils/themes";
-//import { AsyncTypeahead } from "react-bootstrap-typeahead";
-import { Input, InputGroup, InputLeftAddon } from "@chakra-ui/core";
+import { Input, InputGroup, InputLeftAddon, Box, Text, Spinner } from "@chakra-ui/core";
+import { AiOutlinePlusCircle } from "react-icons/ai";
+import {
+	Container,
+	HeroContainer,
+	HeroHeading,
+	HeroSubHeading,
+	Avatar
+} from "./components";
 
 export interface User {
 	screen_name: string;
+	profile_image_url: string;
+	id_str: string;
 }
 
 
@@ -31,41 +40,40 @@ const App = () => {
 		}
 	}
 
-	const fetchUserTimeline = async (user: string, bearerToken: string) => {
-
-		if (!bearer)
-			alert("Can't do this request at this time. Please check back later.");
+	const fetchUserTimeline = async (userId: string, bearerToken: string) => {
 
 		try {
-			const { timeline } = await getAPI(`/api/user-timeline/${user}?bearer=${bearerToken}`);
+			const { timeline } = await getAPI(`/api/user-timeline/${userId}?bearer=${bearerToken}`);
 
 			setUserTimeline({
-				[user]: timeline
+				[userId]: timeline
 			});
+
+			setLoadingQuery(false);
 
 		}
 		catch (err) {
 			alert(err);
+			setLoadingQuery(false);
 		}
 
 	}
 
-	// TODO: need a better auth to hit this endpoint
 	const userSearch = (search: string) => `/api/user-timeline/search.json?q=${search}`;
 
 	const handleAsyncSearch = async (query: string) => {
 
-		setLoadingQuery(true);
+
 
 		try {
 			const { users } = await getAPI(userSearch(query));
 
 			setUserSearchResults(users);
-			setLoadingQuery(false);
+
 
 		}
 		catch (err) {
-			setLoadingQuery(false);
+
 			console.log(err);
 		}
 	}
@@ -74,66 +82,117 @@ const App = () => {
 
 
 	useEffect(() => {
-		console.log("mounting...")
 		// on first mount check if client has a bearer token in localStorage
 		// and if not fetch a fresh one
 		if (!bearer)
 			fetchNewToken();
 
-		//console.log(userTimeline);
-		//if (userTimeline["COERCITON"])
-		//	return console.log("I HAVE COERCITON");
-
 		//fetchUserTimeline("COERCITON", bearer);
 
+		// if user is searching in async input, send query to Server/Twitter API
 		if (query)
 			handleAsyncSearch(query)
 
 	}, [query]);
 
 
-
-
-
-
-
-
 	const handleChange = (e: any) => {
 		setQuery(e.target.value);
 	}
 
+	const addUserTimeline = (userId: string) => {
+
+		// loading state
+		setLoadingQuery(true);
+
+		// clear users menu dropdown
+		setUserSearchResults([]);
+
+		// clear input
+		setQuery("");
+
+		fetchUserTimeline(userId, bearer);
+
+	}
+
+	console.log(userTimeline);
 
 	return (
 		<>
 			<ThemeProvider theme={theme}>
 				<CSSReset />
 
+				{/*<Container>*/}
+				<Box
+					height={["auto", "100vh"]}
+					display={["block", "flex"]}
+					flexDirection={["unset", "column"]}
+					overflowY="scroll"
+					bg="gray.50"
+				>
+					<Box
+						flex={1}
+						display="flex"
+						flexDirection="column"
+						alignItems="center"
+					>
+						<HeroContainer>
+							<HeroHeading>
+								Welcome to TwitterCrunch! 🥳
+								</HeroHeading>
+							<HeroSubHeading>
+								Simply search for a Twitter user handle name to see their latest tweets.
+								</HeroSubHeading>
+							<Box>
+								<InputGroup>
+									<InputLeftAddon size="lg" children="@" />
+									<Input
+										onChange={handleChange}
+										value={query}
+										placeholder="Twitter handle name"
+										size="lg"
+									/>
+								</InputGroup>
+								<Box position="relative" display="flex" flex={1}>
+									<Box position="absolute" width={"100%"} maxH="400px" overflowY="scroll">
+										{userSearchResults.map((user: User, i: string) =>
+											<Box bg="gray.100" key={i}>
+												<Box display="inline-flex" alignItems="center">
+													<Box px="5">
+														<AiOutlinePlusCircle onClick={() => addUserTimeline(user.id_str)} cursor="pointer" />
+													</Box>
 
-				You've go it!
-				<InputGroup>
-					<InputLeftAddon size="lg" children="@" />
-					<Input
-						onChange={handleChange}
-						value={query}
-						placeholder="handle"
-						size="lg"
-					/>
-				</InputGroup>
+													<Avatar imgSrc={user.profile_image_url} />
 
-				{userSearchResults.map((user: User, i: string) => <div key={i}>{user.screen_name}</div>)}
+													<Text px="2" fontWeight={600}>{user.screen_name}</Text>
+												</Box>
+											</Box>)}
+
+									</Box>
+								</Box>
+							</Box>
+							{loadingQuery ?
+								<Box p={5} display="flex" flexDirection="column" alignItems="center">
+									<Spinner />
+									<Text display="block" p={3} fontWeight={600}>Loading...</Text>
+
+								</Box> : null}
+						</HeroContainer>
+
+					</Box>
+
+				</Box>
 
 
 
 
-				{/*<AsyncTypeahead
-					id="spooky"
-					filterBy={["id_str"]}
-					isLoading={loadingQuery}
-					onSearch={handleAsyncSearch}
-					options={userSearchResults}
-					minLength={2}
-					useCache
-				/>*/}
+
+
+
+
+
+				{/*</Container>*/}
+
 
 
 			</ThemeProvider>

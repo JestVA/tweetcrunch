@@ -21,7 +21,8 @@
 	},
 	"include": [
 		"./src/**/*.ts",
-		"src/public/react/tweet-crunch/src/utils/requestAPI.tsx"
+		"src/public/react/tweet-crunch/src/utils/requestAPI.tsx",
+		"src/public/react/tweet-crunch/src/components/container/index.tsx"
 	],
 	"exclude": [
 		"./src/**/*.test.ts",

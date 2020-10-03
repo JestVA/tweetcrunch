@@ -18,12 +18,11 @@ class TwitterController {
 	public static readonly NO_BEARER_TOKEN = "No Bearer token was received from client";
 	public static readonly USERS = "List of 1000 users fetched!";
 
+	// brings back a list of users from Twitter that match the query
 	@Get('search.json')
 	private async searchUsers(req: Request, res: Response) {
 
-		const userPicks = ["id_str", "name", "screen_name", "location"];
-
-
+		const userPicks = ["id_str", "name", "screen_name", "location", "profile_image_url"];
 
 		try {
 			const { q } = req.query;
@@ -64,7 +63,7 @@ class TwitterController {
 		}
 	}
 
-
+	// brings back a fully hydrated user object with timeline
 	@Get(':user_id')
 	private async userTimeline(req: Request, res: Response) {
 
@@ -79,13 +78,13 @@ class TwitterController {
 					error: TwitterController.NO_BEARER_TOKEN
 				});
 
-			const getUserTimeline = await axios.get(`https://api.twitter.com/1.1/statuses/user_timeline.json?screen_name=COERCITON`, {
+			const getUserTimeline = await axios.get(`https://api.twitter.com/1.1/statuses/user_timeline.json?user_id=${user_id}`, {
 				headers: {
 					'authorization': `Bearer ${bearer}`
 				}
 			});
 
-			// will need to do some manipulation / cleanup of data here
+			// TODO: Pick only relevant fields, format the objects better
 
 			return res.status(OK).json({
 				message: TwitterController.SUCCESS_MSG + user_id,
@@ -103,10 +102,12 @@ class TwitterController {
 		}
 	}
 
-
+	// used to generate a Bearer token if we need to. This is usually done in the first handshake when making a new app.
+	// I knew my bearer key so could have skipped this, but when building from scratch I think one must do it so decided to add it
+	// This is cached in localStorage so on subsqeuent requests this endpoint is not hit
 	@Get('auth/bearer')
 	private async generateBearerToken(req: Request, res: Response) {
-		console.log("Generating new bearer token");
+
 		try {
 			// generate a Bearer token for first request and save it in client storage
 			const TWITTER_API_KEY = config.get("twitter.API_KEY");
