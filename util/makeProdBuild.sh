@@ -15,7 +15,7 @@ tsc --sourceMap false
 ### Bundle FrontEnd ###
 
 # Create the directory for React
-mkdir -p ./build/public/react/
+mkdir -p ./build/src/public/react/
 
 # Navigate to the react directory
 cd ./src/public/react/tweet-crunch
@@ -27,4 +27,4 @@ npm run build
 mv build tweet-crunch
 
 # Move the contains to the build/ dir
-mv tweet-crunch ../../../../build/public/react/
+mv tweet-crunch ../../../../build/src/public/react/

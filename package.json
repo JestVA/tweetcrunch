@@ -23,7 +23,7 @@
 		"typescript": "^4.0.3"
 	},
 	"scripts": {
-		"start": "npm install --only=prod && NODE_ENV=production node ./build/start.js",
+		"start": "npm install --only=prod && NODE_ENV=production node ./build/src/start.js",
 		"build": "sh ./util/makeProdBuild.sh",
 		"start-dev": "nodemon --config \"./util/nodemon.json\"/",
 		"test": "echo \"Error: no test specified\" && exit 1"
