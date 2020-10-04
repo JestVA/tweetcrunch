@@ -27,6 +27,7 @@ export interface UserObjTimeline {
 
 export interface Tweet {
 	text: string;
+	id: number
 }
 
 
@@ -280,14 +281,14 @@ const App = () => {
 						{
 							displayTimelines.map((t: UserObjTimeline, i: number) => {
 								return <Box key={i} p={2} m={4} width="320px" height="auto">
-									<Button isDisabled={loadingQuery} onClick={() => refreshTweets(t)} borderColor="gray.200" size="xs" rightIcon="repeat" variantColor="ghost" variant="outline">
+									<Button isDisabled={loadingQuery} onClick={() => refreshTweets(t)} borderColor="gray.200" size="xs" rightIcon="repeat" variant="outline">
 										Refresh
 									</Button>
 									{
 										_.values(t).map(timeline => {
 											return timeline.map((tweet: Tweet) => {
 												// the developer in me was crying so decided to make a component
-												return <TweetCard tweetMetadata={tweet} />
+												return <TweetCard key={tweet.id} tweetMetadata={tweet} />
 											})
 										})
 									}
