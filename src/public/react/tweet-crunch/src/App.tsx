@@ -14,6 +14,7 @@ import {
 	TweetCard
 } from "./components";
 import _ from "underscore";
+import { time } from 'console';
 
 export interface User {
 	screen_name: string;
@@ -38,6 +39,7 @@ const App = () => {
 	const [userSearchResults, setUserSearchResults] = useState<any>([]);
 	const [query, setQuery] = useState("");
 	const [displayTimelines, setDisplayTimelines] = useState<any>([]);
+	const [refreshTimeline, setRefreshTimeline] = useState<boolean>(false);
 
 	const fetchNewToken = async () => {
 		try {
@@ -51,6 +53,9 @@ const App = () => {
 	}
 
 	const fetchUserTimeline = async (userId: string, bearerToken: string, maxId?: number) => {
+
+		setLoadingQuery(true);
+
 		try {
 
 			let qs = `/api/user-timeline/${userId}?bearer=${bearerToken}`;
@@ -61,9 +66,49 @@ const App = () => {
 			console.log(qs);
 			const { timeline } = await getAPI(qs);
 
+			console.log(timeline, "THIS IS THE RETURNED  TIMELINE");
+
 			// TODO: deal with REFRESH issue
 			// do not lose state of cached timeline
+			console.log(userTimeline, "EXISTING TIMELINE")
+			if (timeline.length === 0) {
+				setLoadingQuery(false);
+				setRefreshTimeline(true);
+				return;
+			}
+			else if (maxId) {
+				// need to push new tweets to the existing timeline
+				setUserTimeline({
+					...userTimeline,
+					[userId]: [...userTimeline[userId], ...timeline] // add new tweet objects 
+				});
 
+				const oldDiplayTimelineForUser = displayTimelines.filter((t: any) => t[userId]);
+
+				console.log(oldDiplayTimelineForUser);
+
+				const refreshed = _.first(oldDiplayTimelineForUser)[userId] = [...timeline, ..._.first(oldDiplayTimelineForUser)[userId]];
+
+
+				console.log(refreshed, "REFRESHED")
+				const newTimelines = displayTimelines.map((t: any) => {
+					if (t[userId])
+						return { [userId]: refreshed };
+					else
+						return t;
+				});
+
+				console.log(newTimelines, "NW TIMELINES")
+
+				setDisplayTimelines(newTimelines);
+
+				setLoadingQuery(false);
+				setRefreshTimeline(true);
+				return;
+
+			}
+
+			//console.log(userTimeline, "LOCAL STORAGE")
 
 			setUserTimeline({
 				...userTimeline,
@@ -133,6 +178,9 @@ const App = () => {
 	}
 
 	const refreshTweets = (timelineToRefresh: any) => {
+
+		setRefreshTimeline(false);
+
 		console.log(timelineToRefresh, "TO BE REFRESHED");
 		const [userId, tweetsArray] = [_.keys(timelineToRefresh), _.values(timelineToRefresh)];
 		// since_id
@@ -146,6 +194,8 @@ const App = () => {
 		// set up to date notification! 
 		if (!maxId)
 			return;
+
+		console.log(maxId, "THIS IS THE MAX ID");
 
 		// make a new request with since_id
 		fetchUserTimeline(userId[0], bearer, maxId);
@@ -223,7 +273,7 @@ const App = () => {
 						{
 							displayTimelines.map((t: UserObjTimeline, i: number) => {
 								return <Box key={i} p={2} m={4} width="320px" height="auto">
-									<Button onClick={() => refreshTweets(t)} borderColor="gray.200" size="xs" rightIcon="repeat" variantColor="ghost" variant="outline">
+									<Button isDisabled={loadingQuery} onClick={() => refreshTweets(t)} borderColor="gray.200" size="xs" rightIcon="repeat" variantColor="ghost" variant="outline">
 										Refresh
 									</Button>
 									{
