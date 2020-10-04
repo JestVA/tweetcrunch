@@ -23,12 +23,15 @@ const TweetCard = (props: any) => {
 		full_text: fullText,
 	} = props.tweetMetadata;
 
-
+	const format: any = {
+		notToday: "MMM Do h:mm a",
+		today: "[today] h:mm a"
+	}
 
 	return (
 		<Box key={keyId} my={4} width={"100%"} borderWidth="1px" rounded="lg" overflow="hidden">
 			<Box p={2}>
-				<Box d="flex" alignItems="flex-start">
+				<Box d="flex" alignItems="flex-start" flexWrap="wrap-reverse">
 					<Avatar src={imageUrl} />
 					<Box
 						color="gray.500"
@@ -39,6 +42,14 @@ const TweetCard = (props: any) => {
 						ml="2"
 					>
 						{name} &bull; @{screenName}
+						<Box
+							flex={1}
+							color="gray.300"
+							letterSpacing="narrow"
+							fontSize="xs"
+						>
+							{moment(createdAt).isSame(moment(), "day") ? moment(createdAt).format(format.today) : moment(createdAt).format(format.notToday)}
+						</Box>
 					</Box>
 				</Box>
 				<Box
