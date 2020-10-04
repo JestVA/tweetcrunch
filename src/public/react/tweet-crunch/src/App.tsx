@@ -14,7 +14,6 @@ import {
 	TweetCard
 } from "./components";
 import _ from "underscore";
-import { time } from 'console';
 
 export interface User {
 	screen_name: string;
@@ -40,6 +39,7 @@ const App = () => {
 	const [query, setQuery] = useState("");
 	const [displayTimelines, setDisplayTimelines] = useState<any>([]);
 	const [refreshTimeline, setRefreshTimeline] = useState<boolean>(false);
+	const [updateTweetCount, setUpdateTweetCount] = useState<number>(0);
 
 	const fetchNewToken = async () => {
 		try {
@@ -63,20 +63,26 @@ const App = () => {
 			if (maxId)
 				qs += `&since_id=${maxId}`;
 
-			console.log(qs);
 			const { timeline } = await getAPI(qs);
 
-			console.log(timeline, "THIS IS THE RETURNED  TIMELINE");
 
-			// TODO: deal with REFRESH issue
-			// do not lose state of cached timeline
-			console.log(userTimeline, "EXISTING TIMELINE")
 			if (timeline.length === 0) {
+				setUpdateTweetCount(0);
 				setLoadingQuery(false);
 				setRefreshTimeline(true);
 				return;
 			}
 			else if (maxId) {
+
+				// sometimes Twitter returns the same Tweet (overlap of same Id)
+				if (_.first(timeline).id === maxId) {
+					setUpdateTweetCount(0);
+					setLoadingQuery(false);
+					setRefreshTimeline(true);
+					return;
+				}
+
+				setUpdateTweetCount(timeline.length);
 				// need to push new tweets to the existing timeline
 				setUserTimeline({
 					...userTimeline,
@@ -85,20 +91,14 @@ const App = () => {
 
 				const oldDiplayTimelineForUser = displayTimelines.filter((t: any) => t[userId]);
 
-				console.log(oldDiplayTimelineForUser);
-
 				const refreshed = _.first(oldDiplayTimelineForUser)[userId] = [...timeline, ..._.first(oldDiplayTimelineForUser)[userId]];
 
-
-				console.log(refreshed, "REFRESHED")
 				const newTimelines = displayTimelines.map((t: any) => {
 					if (t[userId])
 						return { [userId]: refreshed };
 					else
 						return t;
 				});
-
-				console.log(newTimelines, "NW TIMELINES")
 
 				setDisplayTimelines(newTimelines);
 
@@ -107,8 +107,6 @@ const App = () => {
 				return;
 
 			}
-
-			//console.log(userTimeline, "LOCAL STORAGE")
 
 			setUserTimeline({
 				...userTimeline,
@@ -132,7 +130,6 @@ const App = () => {
 
 			setUserSearchResults(users);
 
-
 		}
 		catch (err) {
 
@@ -151,6 +148,18 @@ const App = () => {
 			handleAsyncSearch(query)
 
 	}, [query]);
+
+	useEffect(() => {
+		// this useEffect handles a UI/UX display notification
+		// for clearing the "new tweets added/up to date message"
+		if (!refreshTimeline)
+			return;
+
+		const timeoutNotification = setTimeout(() => setRefreshTimeline(false), 2000);
+
+		return () => clearTimeout(timeoutNotification);
+
+	}, [refreshTimeline])
 
 
 	const handleChange = (e: any) => {
@@ -181,7 +190,6 @@ const App = () => {
 
 		setRefreshTimeline(false);
 
-		console.log(timelineToRefresh, "TO BE REFRESHED");
 		const [userId, tweetsArray] = [_.keys(timelineToRefresh), _.values(timelineToRefresh)];
 		// since_id
 		// loop through tweets to get max id
@@ -189,17 +197,12 @@ const App = () => {
 
 		_.first(tweetsArray).forEach((t: any) => t.id > maxId ? maxId = t.id : null);
 
-		console.log(userId);
-
 		// set up to date notification! 
 		if (!maxId)
 			return;
 
-		console.log(maxId, "THIS IS THE MAX ID");
-
 		// make a new request with since_id
 		fetchUserTimeline(userId[0], bearer, maxId);
-
 
 	}
 
@@ -223,13 +226,12 @@ const App = () => {
 					>
 						<HeroContainer>
 							<HeroHeading>
-								{/*Welcome to TwitterCrunch! 🥳*/}
 								Welcome to
 								<Image
 									size="150px"
 									objectFit="cover"
 									src="/assets/twittercrunch.png"
-
+									alt="TwitterCrunch"
 								/>
 							</HeroHeading>
 							<HeroSubHeading>
@@ -267,6 +269,11 @@ const App = () => {
 									<Spinner />
 									<Text display="block" p={3} fontWeight={600}>Loading...</Text>
 								</Box> : null}
+							{
+								refreshTimeline ?
+									<Box p={5} bg="gray.200" display="flex" justifyContent="center" fontWeight={500}>{updateTweetCount ? `Added ${updateTweetCount} new tweets!` : "You're up to date!"}</Box>
+									: null
+							}
 						</HeroContainer>
 					</Box>
 					<Box display="flex" flexDir="row-reverse" justifyContent="center" flexWrap="wrap-reverse">
