@@ -83,7 +83,6 @@ class TwitterController {
 			if (since_id)
 				qs += `&since_id=${Number(since_id) + 1}`;
 
-			console.log(qs);
 
 			const getUserTimeline = await axios.get(qs, {
 				headers: {
